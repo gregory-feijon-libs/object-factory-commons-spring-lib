@@ -26,10 +26,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/gregoryfeijon/object-factory-util-spring-lib.git</connection>
-        <developerConnection>scm:git:https://github.com/gregoryfeijon/object-factory-util-spring-lib.git
+        <connection>scm:git:https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</connection>
+        <developerConnection>scm:git:https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git
         </developerConnection>
-        <url>https://github.com/gregoryfeijon/object-factory-util-spring-lib</url>
+        <url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib</url>
         <tag>HEAD</tag>
     </scm>
 
