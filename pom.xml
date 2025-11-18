@@ -8,7 +8,7 @@
 	<version>1.0.0</version>
 	<name>object-factory-commons-spring-lib</name>
 	<description>Reusable Java utilities designed to support common application tasks.</description>
-	<url>https://github.com/gregoryfeijon/object-factory-commons-spring-lib.git</url>
+	<url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</url>
 
     <licenses>
         <license>
