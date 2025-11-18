@@ -57,6 +57,8 @@
         <maven.resources.encoding>${project.build.sourceEncoding}</maven.resources.encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <sonar.organization>gregory-feijon-libs</sonar.organization>
+        <sonar.projectKey>gregory-feijon-libs_object-factory-commons-spring-lib</sonar.projectKey>
         <lombok.version>1.18.42</lombok.version>
         <spring.starter.version>3.5.7</spring.starter.version>
 	</properties>
