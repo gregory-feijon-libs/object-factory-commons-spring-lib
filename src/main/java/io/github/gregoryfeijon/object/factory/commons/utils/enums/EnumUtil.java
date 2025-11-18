@@ -18,6 +18,9 @@ import java.util.stream.Stream;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class EnumUtil {
 
+    private static final String NULL_ARGUMENTS_ERROR = "Arguments cannot be null: enumType, method, and expectedValue" +
+            " are required";
+
     /**
      * Finds an enum constant by matching a property value.
      * <p>
@@ -32,15 +35,14 @@ public final class EnumUtil {
      * @return An Optional containing the matching enum constant, or empty if none found
      * @throws ApiException If any of the arguments is null
      */
-    public static <T extends Enum<T>, R> Optional<T> getEnum(final Class<T> enumType, final Function<T, R> method, R expectedValue) {
-        boolean hasNullValues = verifyNullValues(enumType, method, expectedValue);
-        if (hasNullValues) {
-            throw new ApiException("Please, define values for all arguments in getEnum method.");
-        }
-        return Stream.of(enumType.getEnumConstants()).filter(e -> {
-            Object value = method.apply(e);
-            return value != null && value.equals(expectedValue);
-        }).findAny();
+    public static <T extends Enum<T>, R> Optional<T> getEnum(
+            final Class<T> enumType,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        validateArguments(enumType, method, expectedValue);
+
+        return findMatchingEnum(enumType, method, expectedValue);
     }
 
     /**
@@ -56,26 +58,67 @@ public final class EnumUtil {
      * @param expectedValue The expected property value to match
      * @return The matching enum constant, or null if none found or if any argument is null
      */
-    public static <T extends Enum<T>, R> T getEnumOrNull(final Class<T> enumType, final Function<T, R> method, R expectedValue) {
-        boolean hasNullValues = verifyNullValues(enumType, method, expectedValue);
-        if (hasNullValues) {
+    public static <T extends Enum<T>, R> T getEnumOrNull(
+            final Class<T> enumType,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        if (hasNullValues(enumType, method, expectedValue)) {
             return null;
         }
-        Optional<T> opEnum = getEnum(enumType, method, expectedValue);
-        return opEnum.orElse(null);
+
+        return findMatchingEnum(enumType, method, expectedValue).orElse(null);
     }
 
     /**
-     * Verifies if any of the arguments is null.
-     *
-     * @param <T>           The enum type
-     * @param <R>           The property type
-     * @param enumType      The class object of the enum type
-     * @param method        A function that extracts the property from an enum constant
-     * @param expectedValue The expected property value to match
-     * @return true if any argument is null, false otherwise
+     * Core logic to find matching enum constant.
+     * Extracts the common logic to avoid duplication.
      */
-    private static <T extends Enum<T>, R> boolean verifyNullValues(Class<T> enumType, Function<T, R> method, R expectedValue) {
-        return (enumType == null || method == null || expectedValue == null);
+    private static <T extends Enum<T>, R> Optional<T> findMatchingEnum(
+            final Class<T> enumType,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        return Stream.of(enumType.getEnumConstants())
+                .filter(enumConstant -> isMatchingEnum(enumConstant, method, expectedValue))
+                .findFirst();
+    }
+
+    /**
+     * Checks if an enum constant matches the expected value.
+     */
+    private static <T extends Enum<T>, R> boolean isMatchingEnum(
+            final T enumConstant,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        R value = method.apply(enumConstant);
+        return value != null && value.equals(expectedValue);
+    }
+
+    /**
+     * Validates that none of the required arguments is null.
+     *
+     * @throws ApiException if any argument is null
+     */
+    private static <T extends Enum<T>, R> void validateArguments(
+            final Class<T> enumType,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        if (hasNullValues(enumType, method, expectedValue)) {
+            throw new ApiException(NULL_ARGUMENTS_ERROR);
+        }
+    }
+
+    /**
+     * Checks if any of the arguments is null.
+     */
+    private static <T extends Enum<T>, R> boolean hasNullValues(
+            final Class<T> enumType,
+            final Function<T, R> method,
+            final R expectedValue) {
+
+        return enumType == null || method == null || expectedValue == null;
     }
 }
