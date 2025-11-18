@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ReflectionTypeUtils {
+public final class ReflectionTypeUtil {
 
     private static final Set<Class<?>> WRAPPER_TYPES;
     private static final Map<Class<?>, Object> DEFAULT_VALUES = new HashMap<>();

@@ -1,0 +1,11 @@
+rules:
+  - id: java.lang.security.audit.unsafe-reflection.classutils
+    pattern: ClassUtils.getClass(...)
+    message: "Legitimate use of ClassUtils.getClass in a utility method with no user input."
+    severity: INFO
+    metadata:
+      reason: "Class is instantiated internally using known domain types. No user input is involved."
+    paths:
+      include:
+        - src/main/java/io/github/gregoryfeijon/object/factory/commons/utils/ReflectionTypeUtil.java
+    languages: [java]

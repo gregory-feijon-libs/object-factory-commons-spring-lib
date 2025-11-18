@@ -640,7 +640,7 @@ public final class ReflectionUtil {
     private static <T, S> boolean verifyNullValueToSet(T target, S valueToSet, Class<?> paramType, Method setter) throws IllegalAccessException, InvocationTargetException {
         if (valueToSet == null) {
             if (paramType.isPrimitive()) {
-                Object defaultValue = ReflectionTypeUtils.defaultValueFor(paramType);
+                Object defaultValue = ReflectionTypeUtil.defaultValueFor(paramType);
                 setter.invoke(target, defaultValue);
                 return true;
             } else {
