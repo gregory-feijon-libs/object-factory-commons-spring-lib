@@ -60,7 +60,7 @@
         <sonar.organization>gregory-feijon-libs</sonar.organization>
         <sonar.projectKey>gregory-feijon-libs_object-factory-commons-spring-lib</sonar.projectKey>
         <lombok.version>1.18.42</lombok.version>
-        <spring.starter.version>3.5.7</spring.starter.version>
+        <spring.starter.version>3.5.8</spring.starter.version>
 	</properties>
 
     <profiles>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>6.2.12</version>
+            <version>6.2.14</version>
         </dependency>
 
         <dependency>
