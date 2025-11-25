@@ -5,7 +5,7 @@
 
 	<groupId>io.github.gregoryfeijon</groupId>
 	<artifactId>object-factory-commons-spring-lib</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>object-factory-commons-spring-lib</name>
 	<description>Reusable Java utilities designed to support common application tasks.</description>
 	<url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</url>
@@ -60,7 +60,7 @@
         <sonar.organization>gregory-feijon-libs</sonar.organization>
         <sonar.projectKey>gregory-feijon-libs_object-factory-commons-spring-lib</sonar.projectKey>
         <lombok.version>1.18.42</lombok.version>
-        <spring.starter.version>3.5.7</spring.starter.version>
+        <spring.starter.version>3.5.8</spring.starter.version>
 	</properties>
 
     <profiles>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>6.2.12</version>
+            <version>6.2.14</version>
         </dependency>
 
         <dependency>
