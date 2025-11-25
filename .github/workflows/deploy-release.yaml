@@ -52,6 +52,6 @@ jobs:
           type: now
           from_branch: ${{ github.ref_name }}
           target_branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.BYPASS_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.BYPASS_TOKEN }}
