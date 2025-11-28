@@ -5,7 +5,7 @@
 
 	<groupId>io.github.gregoryfeijon</groupId>
 	<artifactId>object-factory-commons-spring-lib</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<name>object-factory-commons-spring-lib</name>
 	<description>Reusable Java utilities designed to support common application tasks.</description>
 	<url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</url>
@@ -100,6 +100,20 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>6.2.14</version>
+        </dependency>
+        <!-- Spring Boot Autoconfigure -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>${spring.starter.version}</version>
+        </dependency>
+
+        <!-- Annotation Processor (para gerar metadata) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure-processor</artifactId>
+            <version>${spring.starter.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
