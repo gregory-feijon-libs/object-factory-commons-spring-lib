@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -84,6 +85,38 @@ public class FactoryUtil implements ApplicationContextAware {
                     String.format("Failed to retrieve bean with name '%s' and type: %s",
                             beanName, beanClass.getName()),
                     e);
+        }
+    }
+
+    /**
+     * Retrieves all beans of the specified type.
+     * <p>
+     * This method returns a {@link Map} containing all Spring-managed beans that
+     * match the provided type. The map keys are the bean names and the values are
+     * the corresponding bean instances.
+     * <p>
+     * Useful when multiple beans implement the same interface or extend the same
+     * superclass and you want to process all of them.
+     * <p>
+     * <strong>Thread-Safety:</strong> The underlying {@link ApplicationContext} is
+     * safely obtained through the CAS-protected reference, ensuring visibility and
+     * consistency without synchronized blocks.
+     *
+     * @param <T>       The generic type of the beans to retrieve
+     * @param beanClass The class type of the beans to fetch (must not be null)
+     * @return A map where the key is the bean name and the value is the bean instance
+     * @throws ApiException if context is not initialized, beanClass is null,
+     *                      or bean retrieval fails
+     */
+    public static <T> Map<String, T> getBeansOfType(Class<T> beanClass) {
+        ApplicationContext context = getContext();
+        validateBeanClass(beanClass);
+
+        try {
+            return context.getBeansOfType(beanClass);
+        } catch (BeansException e) {
+            throw new ApiException(
+                    String.format("Failed to retrieve beans with type: %s", beanClass.getName()), e);
         }
     }
 
