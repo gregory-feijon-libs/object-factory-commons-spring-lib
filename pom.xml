@@ -5,7 +5,7 @@
 
     <groupId>io.github.gregoryfeijon</groupId>
     <artifactId>object-factory-commons-spring-lib</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <name>object-factory-commons-spring-lib</name>
     <description>Reusable Java utilities designed to support common application tasks.</description>
     <url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</url>
@@ -46,7 +46,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud.version>2025.0.1</spring-cloud.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
