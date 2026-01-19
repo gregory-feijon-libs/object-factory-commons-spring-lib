@@ -95,7 +95,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>6.2.15</version>
+            <version>7.0.3</version>
         </dependency>
         <!-- Spring Boot Autoconfigure -->
         <dependency>
