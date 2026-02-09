@@ -3,6 +3,7 @@ package io.github.gregoryfeijon.object.factory.commons.utils;
 import io.github.gregoryfeijon.object.factory.commons.exception.ApiException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ReflectionUtil {
 
@@ -1143,7 +1145,7 @@ public final class ReflectionUtil {
             Object value = getValueDynamicallyThroughGetterNameFromField(sourceField, source);
             setValueDynamicallyThroughSetterName(setterName, target, value);
         } catch (ApiException e) {
-            // ignored
+            log.debug("Problem copying field: {}", fieldName, e);
         }
     }
 

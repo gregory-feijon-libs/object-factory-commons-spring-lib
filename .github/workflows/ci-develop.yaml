@@ -52,14 +52,12 @@ jobs:
         run: semgrep --config .semgrep.yaml
 
       - name: Run OWASP Dependency-Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: 'object-factory-commons-spring-lib'
-          path: '.'
-          format: 'HTML'
-          args: >-
-            --nvdApiKey ${{ secrets.NVD_API_KEY }}
-            --failOnCVSS 7
+        run: >-
+          mvn -B org.owasp:dependency-check-maven:check
+          -DnvdApiKey=${{ secrets.NVD_API_KEY }}
+          -DfailBuildOnCVSS=7
+          -Dformats=HTML
+          -DoutputDirectory=reports
 
       - name: Upload OWASP Report
         if: always()
