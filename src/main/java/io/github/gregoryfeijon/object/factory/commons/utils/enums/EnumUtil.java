@@ -4,6 +4,7 @@ import io.github.gregoryfeijon.object.factory.commons.exception.ApiException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -71,8 +72,14 @@ public final class EnumUtil {
     }
 
     /**
-     * Core logic to find matching enum constant.
-     * Extracts the common logic to avoid duplication.
+     * Finds the first enum constant that matches the expected value.
+     *
+     * @param <T>           The enum type
+     * @param <R>           The property type
+     * @param enumType      The enum class
+     * @param method        The property extractor function
+     * @param expectedValue The value to match
+     * @return Optional containing the matching enum, or empty if not found
      */
     private static <T extends Enum<T>, R> Optional<T> findMatchingEnum(
             final Class<T> enumType,
@@ -85,7 +92,14 @@ public final class EnumUtil {
     }
 
     /**
-     * Checks if an enum constant matches the expected value.
+     * Determines if the enum constant's property value matches the expected value.
+     *
+     * @param <T>           The enum type
+     * @param <R>           The property type
+     * @param enumConstant  The enum constant to check
+     * @param method        The property extractor function
+     * @param expectedValue The value to match against
+     * @return true if the property value equals the expected value
      */
     private static <T extends Enum<T>, R> boolean isMatchingEnum(
             final T enumConstant,
@@ -94,6 +108,135 @@ public final class EnumUtil {
 
         R value = method.apply(enumConstant);
         return value != null && value.equals(expectedValue);
+    }
+
+    /**
+     * Finds an enum constant by its name.
+     * <p>
+     * This method provides a safer alternative to {@link Enum#valueOf(Class, String)}
+     * that returns an Optional instead of throwing an exception when the name is not found.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>
+     * Optional&lt;Status&gt; status = EnumUtil.getEnumByName(Status.class, "ACTIVE");
+     * </pre>
+     *
+     * @param <T>       The enum type
+     * @param enumType  The class object of the enum type (must not be null)
+     * @param name      The name of the enum constant to find (must not be null)
+     * @return An Optional containing the matching enum constant, or empty if not found
+     * @throws ApiException If enumType or name is null
+     */
+    public static <T extends Enum<T>> Optional<T> getEnumByName(
+            final Class<T> enumType,
+            final String name) {
+
+        return getEnumByName(enumType, name, false);
+    }
+
+    /**
+     * Finds an enum constant by its name with optional case-insensitive matching.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>
+     * // Case-sensitive (default)
+     * Optional&lt;Status&gt; status1 = EnumUtil.getEnumByName(Status.class, "ACTIVE", false);
+     *
+     * // Case-insensitive
+     * Optional&lt;Status&gt; status2 = EnumUtil.getEnumByName(Status.class, "active", true);
+     * </pre>
+     *
+     * @param <T>        The enum type
+     * @param enumType   The class object of the enum type (must not be null)
+     * @param name       The name of the enum constant to find (must not be null)
+     * @param ignoreCase Whether to ignore case when matching names
+     * @return An Optional containing the matching enum constant, or empty if not found
+     * @throws ApiException If enumType or name is null
+     */
+    public static <T extends Enum<T>> Optional<T> getEnumByName(
+            final Class<T> enumType,
+            final String name,
+            final boolean ignoreCase) {
+
+        validateNameArguments(enumType, name);
+
+        return Stream.of(enumType.getEnumConstants())
+                .filter(enumConstant -> matchesName(enumConstant, name, ignoreCase))
+                .findFirst();
+    }
+
+    /**
+     * Finds an enum constant by its name, returning null if not found.
+     * <p>
+     * This method is similar to {@link #getEnumByName(Class, String)} but returns null
+     * instead of an Optional when no matching enum constant is found.
+     *
+     * @param <T>       The enum type
+     * @param enumType  The class object of the enum type
+     * @param name      The name of the enum constant to find
+     * @return The matching enum constant, or null if not found or if any argument is null
+     */
+    public static <T extends Enum<T>> T getEnumByNameOrNull(
+            final Class<T> enumType,
+            final String name) {
+
+        return getEnumByNameOrNull(enumType, name, false);
+    }
+
+    /**
+     * Finds an enum constant by its name with optional case-insensitive matching,
+     * returning null if not found.
+     *
+     * @param <T>        The enum type
+     * @param enumType   The class object of the enum type
+     * @param name       The name of the enum constant to find
+     * @param ignoreCase Whether to ignore case when matching names
+     * @return The matching enum constant, or null if not found or if any argument is null
+     */
+    public static <T extends Enum<T>> T getEnumByNameOrNull(
+            final Class<T> enumType,
+            final String name,
+            final boolean ignoreCase) {
+
+        if (enumType == null || name == null) {
+            return null;
+        }
+
+        return getEnumByName(enumType, name, ignoreCase).orElse(null);
+    }
+
+    /**
+     * Determines if the enum constant's name matches the given name.
+     *
+     * @param <T>          The enum type
+     * @param enumConstant The enum constant to check
+     * @param name         The name to match against
+     * @param ignoreCase   Whether to perform case-insensitive comparison
+     * @return true if the names match according to the comparison mode
+     */
+    private static <T extends Enum<T>> boolean matchesName(
+            final T enumConstant,
+            final String name,
+            final boolean ignoreCase) {
+
+        if (ignoreCase) {
+            return enumConstant.name().toLowerCase(Locale.ROOT).equals(name.toLowerCase(Locale.ROOT));
+        }
+        return enumConstant.name().equals(name);
+    }
+
+    /**
+     * Validates arguments for name-based enum lookup.
+     *
+     * @throws ApiException if enumType or name is null
+     */
+    private static <T extends Enum<T>> void validateNameArguments(
+            final Class<T> enumType,
+            final String name) {
+
+        if (enumType == null || name == null) {
+            throw new ApiException("Arguments cannot be null: enumType and name are required");
+        }
     }
 
     /**
@@ -112,7 +255,14 @@ public final class EnumUtil {
     }
 
     /**
-     * Checks if any of the arguments is null.
+     * Verifies if any of the provided arguments is null.
+     *
+     * @param <T>           The enum type
+     * @param <R>           The property type
+     * @param enumType      The enum class to check
+     * @param method        The property extractor function to check
+     * @param expectedValue The expected value to check
+     * @return true if any argument is null
      */
     private static <T extends Enum<T>, R> boolean hasNullValues(
             final Class<T> enumType,

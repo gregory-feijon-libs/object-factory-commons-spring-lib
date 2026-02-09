@@ -628,6 +628,129 @@ class ReflectionUtilTest {
     }
 
     @Nested
+    @DisplayName("copyProperties() tests")
+    class CopyPropertiesTests {
+
+        @Test
+        @DisplayName("Should copy all properties from source to target")
+        void shouldCopyAllProperties() {
+            // Given
+            SimpleObject source = new SimpleObject();
+            source.setName("John");
+            source.setAge(30);
+            source.setActive(false);
+
+            SimpleObject target = new SimpleObject();
+
+            // When
+            ReflectionUtil.copyProperties(source, target);
+
+            // Then
+            assertThat(target.getName()).isEqualTo("John");
+            assertThat(target.getAge()).isEqualTo(30);
+            assertThat(target.isActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should copy properties ignoring specified ones")
+        void shouldCopyPropertiesIgnoringSpecified() {
+            // Given
+            SimpleObject source = new SimpleObject();
+            source.setName("Jane");
+            source.setAge(25);
+            source.setActive(true);
+
+            SimpleObject target = new SimpleObject();
+
+            // When
+            ReflectionUtil.copyProperties(source, target, "name", "active");
+
+            // Then
+            assertThat(target.getName()).isEqualTo("test"); // Original value
+            assertThat(target.getAge()).isEqualTo(25); // Copied
+            assertThat(target.isActive()).isTrue(); // Original value (from constructor)
+        }
+
+        @Test
+        @DisplayName("Should handle null values during copy")
+        void shouldHandleNullValuesDuringCopy() {
+            // Given
+            SimpleObject source = new SimpleObject();
+            source.setName(null);
+            source.setAge(0);
+            source.setActive(false);
+
+            SimpleObject target = new SimpleObject();
+
+            // When
+            ReflectionUtil.copyProperties(source, target);
+
+            // Then
+            assertThat(target.getName()).isNull();
+            assertThat(target.getAge()).isZero();
+            assertThat(target.isActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should copy inherited properties")
+        void shouldCopyInheritedProperties() {
+            // Given
+            Child source = new Child();
+            source.setChildField("child value");
+            source.setParentField("parent value");
+
+            Child target = new Child();
+
+            // When
+            ReflectionUtil.copyProperties(source, target);
+
+            // Then
+            assertThat(target.getChildField()).isEqualTo("child value");
+            assertThat(target.getParentField()).isEqualTo("parent value");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when source is null")
+        void shouldThrowExceptionWhenSourceIsNull() {
+            // Given
+            SimpleObject target = new SimpleObject();
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionUtil.copyProperties(null, target))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Source object cannot be null");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when target is null")
+        void shouldThrowExceptionWhenTargetIsNull() {
+            // Given
+            SimpleObject source = new SimpleObject();
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionUtil.copyProperties(source, null))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Target object cannot be null");
+        }
+
+        @Test
+        @DisplayName("Should handle empty ignore properties array")
+        void shouldHandleEmptyIgnoreProperties() {
+            // Given
+            SimpleObject source = new SimpleObject();
+            source.setName("Test");
+
+            SimpleObject target = new SimpleObject();
+
+            // When
+            ReflectionUtil.copyProperties(source, target, new String[0]);
+
+            // Then
+            assertThat(target.getName()).isEqualTo("Test");
+        }
+    }
+
+    @Nested
     @DisplayName("Edge Cases and Integration Tests")
     class EdgeCasesTests {
 

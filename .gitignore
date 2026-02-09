@@ -31,3 +31,15 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+
+### Environment ###
+.env
+.env.*
+
+### IA ###
+.claude
+nul
+NUL

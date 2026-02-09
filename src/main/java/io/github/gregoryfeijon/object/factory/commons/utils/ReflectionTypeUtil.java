@@ -7,9 +7,12 @@ import org.apache.commons.lang3.ClassUtils;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
+import java.util.List;
 import java.sql.Time;
 import java.text.Format;
 import java.time.Instant;
@@ -18,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.Temporal;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,14 +66,8 @@ public final class ReflectionTypeUtil {
     /**
      * Resolves the raw {@link Class} corresponding to a given {@link Type}.
      * <p>
-     * Supports resolution of:
-     * <ul>
-     *     <li>{@link Class}</li>
-     *     <li>{@link ParameterizedType}</li>
-     *     <li>{@link GenericArrayType}</li>
-     *     <li>{@link TypeVariable}</li>
-     *     <li>{@link WildcardType}</li>
-     * </ul>
+     * Supports resolution of Class, ParameterizedType, GenericArrayType,
+     * TypeVariable, and WildcardType.
      *
      * @param genericType the type to resolve
      * @return the resolved concrete {@link Class}
@@ -81,28 +79,55 @@ public final class ReflectionTypeUtil {
             return clazz;
         }
         if (genericType instanceof ParameterizedType parameterizedType) {
-            Type rawType = parameterizedType.getRawType();
-            return ClassUtils.getClass(rawType.getTypeName());
+            return resolveParameterizedType(parameterizedType);
         }
         if (genericType instanceof GenericArrayType genericArrayType) {
-            Class<?> componentType = getRawType(genericArrayType.getGenericComponentType());
-            return Array.newInstance(componentType, 0).getClass();
+            return resolveGenericArrayType(genericArrayType);
         }
         if (genericType instanceof TypeVariable<?> typeVariable) {
-            Type[] bounds = typeVariable.getBounds();
-            if (bounds.length > 0) {
-                return getRawType(bounds[0]);
-            }
-            throw new IllegalArgumentException("TypeVariable without bounds: " + typeVariable.getName());
+            return resolveTypeVariable(typeVariable);
         }
         if (genericType instanceof WildcardType wildcardType) {
-            Type[] upperBounds = wildcardType.getUpperBounds();
-            if (upperBounds.length > 0) {
-                return getRawType(upperBounds[0]);
-            }
-            throw new IllegalArgumentException("WildcardType without upper bounds: " + wildcardType);
+            return resolveWildcardType(wildcardType);
         }
         throw new IllegalArgumentException("Unsupported Type implementation: " + genericType.getClass().getName());
+    }
+
+    /**
+     * Resolves a ParameterizedType to its raw class.
+     */
+    private static Class<?> resolveParameterizedType(ParameterizedType type) throws ClassNotFoundException {
+        return ClassUtils.getClass(type.getRawType().getTypeName());
+    }
+
+    /**
+     * Resolves a GenericArrayType to its array class.
+     */
+    private static Class<?> resolveGenericArrayType(GenericArrayType type) throws ClassNotFoundException {
+        Class<?> componentType = getRawType(type.getGenericComponentType());
+        return Array.newInstance(componentType, 0).getClass();
+    }
+
+    /**
+     * Resolves a TypeVariable to its bound class.
+     */
+    private static Class<?> resolveTypeVariable(TypeVariable<?> typeVariable) throws ClassNotFoundException {
+        Type[] bounds = typeVariable.getBounds();
+        if (bounds.length > 0) {
+            return getRawType(bounds[0]);
+        }
+        throw new IllegalArgumentException("TypeVariable without bounds: " + typeVariable.getName());
+    }
+
+    /**
+     * Resolves a WildcardType to its upper bound class.
+     */
+    private static Class<?> resolveWildcardType(WildcardType wildcardType) throws ClassNotFoundException {
+        Type[] upperBounds = wildcardType.getUpperBounds();
+        if (upperBounds.length > 0) {
+            return getRawType(upperBounds[0]);
+        }
+        throw new IllegalArgumentException("WildcardType without upper bounds: " + wildcardType);
     }
 
     /**
@@ -200,58 +225,44 @@ public final class ReflectionTypeUtil {
      */
     public static Set<Class<?>> getWrapperTypes() {
         Set<Class<?>> wrappers = new HashSet<>();
-        wrappers.add(Boolean.class);
-        wrappers.add(Byte.class);
-        wrappers.add(UUID.class);
+        wrappers.addAll(Set.of(Boolean.class, Byte.class, UUID.class));
         wrappers.addAll(numberTypes());
         wrappers.addAll(dateTypes());
         wrappers.addAll(textTypes());
-        return wrappers;
+        return Collections.unmodifiableSet(wrappers);
     }
 
     /**
      * Returns the set of text-related wrapper types (e.g. {@link String}, {@link Character}).
      *
-     * @return a set of text-related classes
+     * @return an unmodifiable set of text-related classes
      */
     public static Set<Class<?>> textTypes() {
-        Set<Class<?>> aux = new HashSet<>();
-        aux.add(String.class);
-        aux.add(Character.class);
-        aux.add(Format.class);
-        return aux;
+        return Set.of(String.class, Character.class, Format.class);
     }
 
     /**
      * Returns the set of date/time-related wrapper types.
      *
-     * @return a set of temporal-related classes
+     * @return an unmodifiable set of temporal-related classes
      */
     public static Set<Class<?>> dateTypes() {
-        Set<Class<?>> aux = new HashSet<>();
-        aux.add(Date.class);
-        aux.add(Time.class);
-        aux.add(LocalDateTime.class);
-        aux.add(LocalDate.class);
-        aux.add(LocalTime.class);
-        aux.add(Temporal.class);
-        aux.add(Instant.class);
-        return aux;
+        return Set.of(
+                Date.class, Time.class, LocalDateTime.class,
+                LocalDate.class, LocalTime.class, Temporal.class, Instant.class
+        );
     }
 
     /**
      * Returns the set of numeric wrapper types.
      *
-     * @return a set of number-related classes
+     * @return an unmodifiable set of number-related classes
      */
     public static Set<Class<?>> numberTypes() {
-        Set<Class<?>> aux = new HashSet<>();
-        aux.add(Integer.class);
-        aux.add(Double.class);
-        aux.add(Float.class);
-        aux.add(Long.class);
-        aux.add(Number.class);
-        return aux;
+        return Set.of(
+                Integer.class, Double.class, Float.class,
+                Long.class, Short.class, Number.class
+        );
     }
 
     /**
@@ -266,6 +277,59 @@ public final class ReflectionTypeUtil {
         DEFAULT_VALUES.put(char.class, '\0');
         DEFAULT_VALUES.put(float.class, 0.0F);
         DEFAULT_VALUES.put(double.class, 0.0D);
+    }
+
+    // ==================== Record Support (Java 16+) ====================
+
+    /**
+     * Checks whether the given class is a Java Record.
+     * <p>
+     * Records are immutable data carriers introduced in Java 16.
+     *
+     * @param clazz the class to inspect
+     * @return {@code true} if the class is a record; otherwise {@code false}
+     */
+    public static boolean isRecord(Class<?> clazz) {
+        return clazz != null && clazz.isRecord();
+    }
+
+    /**
+     * Gets all record components for a given record class.
+     * <p>
+     * Record components represent the fields declared in the record header.
+     *
+     * @param recordClass the record class to inspect (must be a record)
+     * @return a list of record components, or empty list if not a record
+     */
+    public static List<RecordComponent> getRecordComponents(Class<?> recordClass) {
+        if (recordClass == null || !recordClass.isRecord()) {
+            return List.of();
+        }
+        return Arrays.asList(recordClass.getRecordComponents());
+    }
+
+    /**
+     * Gets the names of all record components for a given record class.
+     *
+     * @param recordClass the record class to inspect
+     * @return a list of component names, or empty list if not a record
+     */
+    public static List<String> getRecordComponentNames(Class<?> recordClass) {
+        return getRecordComponents(recordClass).stream()
+                .map(RecordComponent::getName)
+                .toList();
+    }
+
+    /**
+     * Gets the types of all record components for a given record class.
+     *
+     * @param recordClass the record class to inspect
+     * @return a list of component types, or empty list if not a record
+     */
+    public static List<Class<?>> getRecordComponentTypes(Class<?> recordClass) {
+        return getRecordComponents(recordClass).stream()
+                .<Class<?>>map(RecordComponent::getType)
+                .toList();
     }
 
     /**
