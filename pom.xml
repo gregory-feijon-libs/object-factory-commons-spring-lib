@@ -58,6 +58,7 @@
         <jacoco.version>0.8.14</jacoco.version>
         <lombok.version>1.18.42</lombok.version>
         <spring.starter.version>3.5.10</spring.starter.version>
+        <sonar.plugin.version>5.5.0.6356</sonar.plugin.version>
     </properties>
 
     <profiles>
@@ -226,6 +227,11 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.plugin.version}</version>
             </plugin>
         </plugins>
     </build>

@@ -43,7 +43,7 @@ jobs:
       - name: Build, Test and Analyze (SonarCloud)
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.token=$SONAR_TOKEN
+        run: mvn -B clean verify sonar:sonar -Dsonar.token=$SONAR_TOKEN
 
       - name: Install Semgrep
         run: pip install semgrep
@@ -57,11 +57,10 @@ jobs:
           -DnvdApiKey=${{ secrets.NVD_API_KEY }}
           -DfailBuildOnCVSS=7
           -Dformats=HTML
-          -DoutputDirectory=reports
 
       - name: Upload OWASP Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: owasp-dependency-check-report
-          path: reports/
+          path: target/dependency-check-report.html
