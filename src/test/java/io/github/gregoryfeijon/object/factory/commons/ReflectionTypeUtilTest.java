@@ -16,11 +16,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.mockito.Mockito;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -795,6 +798,41 @@ class ReflectionTypeUtilTest {
                         .hasSize(3)
                         .containsExactly(String.class, List.class, TestRecord.class);
             }
+        }
+    }
+
+    // ==================== Additional Coverage: TypeVariable/WildcardType without bounds ====================
+
+    @Nested
+    @DisplayName("getRawType() edge cases with mocked types")
+    class GetRawTypeMockedTests {
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("Should throw for TypeVariable without bounds")
+        void shouldThrowForTypeVariableWithoutBounds() {
+            // Given - mock a TypeVariable with empty bounds
+            TypeVariable<?> mockTypeVar = Mockito.mock(TypeVariable.class);
+            Mockito.when(mockTypeVar.getBounds()).thenReturn(new Type[0]);
+            Mockito.when(mockTypeVar.getName()).thenReturn("T");
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionTypeUtil.getRawType(mockTypeVar))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("TypeVariable without bounds: T");
+        }
+
+        @Test
+        @DisplayName("Should throw for WildcardType without upper bounds")
+        void shouldThrowForWildcardTypeWithoutUpperBounds() {
+            // Given - mock a WildcardType with empty upper bounds
+            WildcardType mockWildcard = Mockito.mock(WildcardType.class);
+            Mockito.when(mockWildcard.getUpperBounds()).thenReturn(new Type[0]);
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionTypeUtil.getRawType(mockWildcard))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("WildcardType without upper bounds");
         }
     }
 }

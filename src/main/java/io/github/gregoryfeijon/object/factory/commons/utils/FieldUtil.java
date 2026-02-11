@@ -35,7 +35,7 @@ public final class FieldUtil {
      */
     @FunctionalInterface
     private interface FieldSetterStrategy {
-        void setValue(Field field, Object target, Object value) throws Exception;
+        void setValue(Field field, Object target, Object value) throws ReflectiveOperationException;
     }
 
     /**
@@ -43,7 +43,7 @@ public final class FieldUtil {
      */
     @FunctionalInterface
     private interface FieldGetterStrategy {
-        Object getValue(Field field, Object target) throws Exception;
+        Object getValue(Field field, Object target) throws ReflectiveOperationException;
     }
 
     /**
@@ -162,9 +162,9 @@ public final class FieldUtil {
      * @param field  The field to set
      * @param target The object containing the field
      * @param value  The value to set
-     * @throws Exception If no setter is found or setter invocation fails
+     * @throws ApiException If no setter is found or setter invocation fails
      */
-    private static void setValueUsingSetter(Field field, Object target, Object value) throws Exception {
+    private static void setValueUsingSetter(Field field, Object target, Object value) {
         ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(field, target, value);
     }
 
@@ -185,9 +185,9 @@ public final class FieldUtil {
      * @param field  The field to set
      * @param target The object containing the field
      * @param value  The value to set
-     * @throws Exception If the field value cannot be set using VarHandle
+     * @throws ReflectiveOperationException If the field value cannot be set using VarHandle
      */
-    private static void setFieldValueWithHandles(Field field, Object target, Object value) throws Exception {
+    private static void setFieldValueWithHandles(Field field, Object target, Object value) throws ReflectiveOperationException {
         MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
                 target.getClass(),
                 MethodHandles.lookup());
@@ -204,9 +204,9 @@ public final class FieldUtil {
      * @param field  The field to set
      * @param target The object containing the field
      * @param value  The value to set
-     * @throws Exception If field access fails
+     * @throws ReflectiveOperationException If field access fails
      */
-    private static void setValueUsingFieldUtils(Field field, Object target, Object value) throws Exception {
+    private static void setValueUsingFieldUtils(Field field, Object target, Object value) throws ReflectiveOperationException {
         FieldUtils.writeField(target, field.getName(), value, true);
     }
 
@@ -221,9 +221,9 @@ public final class FieldUtil {
      * @param field  The field to get
      * @param target The object containing the field
      * @return The value from the getter
-     * @throws Exception If no getter is found or getter invocation fails
+     * @throws ApiException If no getter is found or getter invocation fails
      */
-    private static Object getValueUsingGetter(Field field, Object target) throws Exception {
+    private static Object getValueUsingGetter(Field field, Object target) {
         return ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(field, target);
     }
 
@@ -236,9 +236,9 @@ public final class FieldUtil {
      * @param field  The field to get
      * @param target The object containing the field
      * @return The value of the field
-     * @throws Exception If the field value cannot be retrieved using VarHandle
+     * @throws ReflectiveOperationException If the field value cannot be retrieved using VarHandle
      */
-    private static Object getFieldValueWithHandles(Field field, Object target) throws Exception {
+    private static Object getFieldValueWithHandles(Field field, Object target) throws ReflectiveOperationException {
         MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
                 target.getClass(),
                 MethodHandles.lookup());
@@ -254,9 +254,9 @@ public final class FieldUtil {
      * @param field  The field to get
      * @param target The object containing the field
      * @return The value of the field
-     * @throws Exception If field access fails
+     * @throws ReflectiveOperationException If field access fails
      */
-    private static Object getValueUsingFieldUtils(Field field, Object target) throws Exception {
+    private static Object getValueUsingFieldUtils(Field field, Object target) throws ReflectiveOperationException {
         return FieldUtils.readField(field, target, true);
     }
 

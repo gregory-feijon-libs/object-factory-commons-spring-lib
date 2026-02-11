@@ -59,6 +59,15 @@
         <lombok.version>1.18.42</lombok.version>
         <spring.starter.version>3.5.10</spring.starter.version>
         <sonar.plugin.version>5.5.0.6356</sonar.plugin.version>
+        <sonar.coverage.exclusions>
+            **/config/**,
+            **/exception/**,
+            **/package-info.java
+        </sonar.coverage.exclusions>
+        <jacoco.exclusions>
+            **/config/**,
+            **/exception/**
+        </jacoco.exclusions>
     </properties>
 
     <profiles>
@@ -224,6 +233,10 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
+                            <excludes>
+                                <exclude>**/config/**</exclude>
+                                <exclude>**/exception/**</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
