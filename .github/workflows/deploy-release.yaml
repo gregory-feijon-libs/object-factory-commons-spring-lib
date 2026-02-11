@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
 
@@ -33,7 +33,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Setup JDK 21
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v4
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -114,7 +114,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.BYPASS_TOKEN }}
@@ -138,5 +138,14 @@ jobs:
           git merge --no-ff main -m "Merge main back into develop after release ${{ github.ref_name }}"
           git push origin develop
 
-      - name: Delete release branch
-        run: git push origin --delete ${{ github.ref_name }}
+      - name: Delete previous release branches (keep current)
+        run: |
+          CURRENT_BRANCH="${{ github.ref_name }}"
+          git fetch origin 'refs/heads/release/*:refs/remotes/origin/release/*'
+          for branch in $(git branch -r --list 'origin/release/*' | sed 's|^ *origin/||'); do
+            if [[ "$branch" != "$CURRENT_BRANCH" ]]; then
+              echo "Deleting old release branch: $branch"
+              git push origin --delete "$branch" || true
+            fi
+          done
+          echo "Kept current release branch: $CURRENT_BRANCH"
