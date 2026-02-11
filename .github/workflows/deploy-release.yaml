@@ -6,23 +6,48 @@ on:
     branches:
       - 'release/**'
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     name: Validate Release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
         with:
           fetch-depth: 0
 
+      - name: Extract version from branch name
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#release/}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+            echo "::error::Invalid version format: $VERSION"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
+
+      - name: Validate POM version matches branch
+        run: |
+          POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BRANCH_VERSION="${{ steps.version.outputs.VERSION }}"
+          if [[ "$POM_VERSION" != "$BRANCH_VERSION" ]]; then
+            echo "::error::Version mismatch! POM: $POM_VERSION | Branch: $BRANCH_VERSION"
+            exit 1
+          fi
+          echo "Version validated: $POM_VERSION"
 
       - name: Run Tests
         run: mvn -B clean verify
@@ -31,12 +56,13 @@ jobs:
     name: Deploy to Maven Central
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 15
     permissions:
       contents: write
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Extract version from branch name
         id: version
@@ -55,7 +81,7 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  # v5.2.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -78,25 +104,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  merge-to-main:
-    name: Merge to Main
+  merge-and-cleanup:
+    name: Merge to Main/Develop and Cleanup
     runs-on: ubuntu-latest
     needs: deploy
+    timeout-minutes: 5
     permissions:
       contents: write
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.BYPASS_TOKEN }}
 
-      - name: Merge to main
+      - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge to main
+        run: |
           git fetch origin main
           git checkout main
           git merge --no-ff ${{ github.ref_name }} -m "Merge release ${{ github.ref_name }} into main"
           git push origin main
+
+      - name: Merge to develop
+        run: |
+          git fetch origin develop
+          git checkout develop
+          git merge --no-ff main -m "Merge main back into develop after release ${{ github.ref_name }}"
+          git push origin develop
+
+      - name: Delete release branch
+        run: git push origin --delete ${{ github.ref_name }}
