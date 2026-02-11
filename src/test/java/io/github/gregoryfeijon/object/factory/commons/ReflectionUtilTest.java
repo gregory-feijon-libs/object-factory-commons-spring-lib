@@ -3,6 +3,7 @@ package io.github.gregoryfeijon.object.factory.commons;
 import io.github.gregoryfeijon.object.factory.commons.domain.Child;
 import io.github.gregoryfeijon.object.factory.commons.domain.CollectionSetterObject;
 import io.github.gregoryfeijon.object.factory.commons.domain.ComparisonObject;
+import io.github.gregoryfeijon.object.factory.commons.domain.ConcreteClass;
 import io.github.gregoryfeijon.object.factory.commons.domain.MismatchedGetterObject;
 import io.github.gregoryfeijon.object.factory.commons.domain.NoGetterSetterObject;
 import io.github.gregoryfeijon.object.factory.commons.domain.NonPublicAccessorObject;
@@ -12,6 +13,9 @@ import io.github.gregoryfeijon.object.factory.commons.utils.ReflectionUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -903,7 +907,8 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when getter function is null in safeGet")
         void shouldThrowWhenGetterFunctionIsNull() {
-            assertThatThrownBy(() -> ReflectionUtil.safeGet(new SimpleObject(), null))
+            SimpleObject obj = new SimpleObject();
+            assertThatThrownBy(() -> ReflectionUtil.safeGet(obj, null))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Getter function cannot be null");
         }
@@ -911,7 +916,8 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when getter function is null in safeGetWithDefaultValue")
         void shouldThrowWhenGetterFunctionIsNullInSafeGetWithDefault() {
-            assertThatThrownBy(() -> ReflectionUtil.safeGetWithDefaultValue(new SimpleObject(), null, "default"))
+            SimpleObject obj = new SimpleObject();
+            assertThatThrownBy(() -> ReflectionUtil.safeGetWithDefaultValue(obj, null, "default"))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Getter function cannot be null");
         }
@@ -919,8 +925,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when field is null in getValueDynamicallyThroughGetterNameFromField")
         void shouldThrowWhenFieldIsNullInGetterFromField() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(null, new SimpleObject()))
+                    ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(null, obj))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Field cannot be null");
         }
@@ -936,29 +943,14 @@ class ReflectionUtilTest {
                     .hasMessageContaining("cannot be null");
         }
 
-        @Test
-        @DisplayName("Should throw when getter name is null")
-        void shouldThrowWhenGetterNameIsNull() {
+        @ParameterizedTest(name = "Should throw when getter name is ''{0}''")
+        @NullSource
+        @ValueSource(strings = {"", "   "})
+        @DisplayName("Should throw when getter name is null, empty or blank")
+        void shouldThrowWhenGetterNameIsInvalid(String name) {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.getValueDynamicallyThroughGetterName(null, new SimpleObject()))
-                    .isInstanceOf(ApiException.class)
-                    .hasMessageContaining("method name cannot be null or empty");
-        }
-
-        @Test
-        @DisplayName("Should throw when getter name is empty")
-        void shouldThrowWhenGetterNameIsEmpty() {
-            assertThatThrownBy(() ->
-                    ReflectionUtil.getValueDynamicallyThroughGetterName("", new SimpleObject()))
-                    .isInstanceOf(ApiException.class)
-                    .hasMessageContaining("method name cannot be null or empty");
-        }
-
-        @Test
-        @DisplayName("Should throw when getter name is blank")
-        void shouldThrowWhenGetterNameIsBlank() {
-            assertThatThrownBy(() ->
-                    ReflectionUtil.getValueDynamicallyThroughGetterName("   ", new SimpleObject()))
+                    ReflectionUtil.getValueDynamicallyThroughGetterName(name, obj))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("method name cannot be null or empty");
         }
@@ -975,8 +967,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when field is null in setValueDynamicallyThroughSetterNameFromField")
         void shouldThrowWhenFieldIsNullInSetterFromField() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(null, new SimpleObject(), "value"))
+                    ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(null, obj, "value"))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Field cannot be null");
         }
@@ -995,8 +988,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when setter name is null")
         void shouldThrowWhenSetterNameIsNull() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.setValueDynamicallyThroughSetterName(null, new SimpleObject(), "value"))
+                    ReflectionUtil.setValueDynamicallyThroughSetterName(null, obj, "value"))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("method name cannot be null or empty");
         }
@@ -1004,8 +998,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when setter name is empty")
         void shouldThrowWhenSetterNameIsEmpty() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.setValueDynamicallyThroughSetterName("", new SimpleObject(), "value"))
+                    ReflectionUtil.setValueDynamicallyThroughSetterName("", obj, "value"))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("method name cannot be null or empty");
         }
@@ -1027,7 +1022,8 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when first entity is null")
         void shouldThrowWhenFirstEntityIsNull() {
-            assertThatThrownBy(() -> ReflectionUtil.compareObjectsValues(null, new SimpleObject()))
+            SimpleObject obj = new SimpleObject();
+            assertThatThrownBy(() -> ReflectionUtil.compareObjectsValues(null, obj))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Entities to compare cannot be null");
         }
@@ -1035,7 +1031,8 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when second entity is null")
         void shouldThrowWhenSecondEntityIsNull() {
-            assertThatThrownBy(() -> ReflectionUtil.compareObjectsValues(new SimpleObject(), null))
+            SimpleObject obj = new SimpleObject();
+            assertThatThrownBy(() -> ReflectionUtil.compareObjectsValues(obj, null))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Entities to compare cannot be null");
         }
@@ -1150,8 +1147,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should validate entities in 4-param compare method")
         void shouldValidateEntitiesIn4ParamCompare() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.compareObjectsValues(null, new SimpleObject(), new String[]{"name"}, true))
+                    ReflectionUtil.compareObjectsValues(null, obj, new String[]{"name"}, true))
                     .isInstanceOf(ApiException.class)
                     .hasMessage("Entities to compare cannot be null");
         }
@@ -1224,10 +1222,11 @@ class ReflectionUtilTest {
         void shouldThrowForIncompatibleTypes() {
             // Given
             SimpleObject obj = new SimpleObject();
+            List<String> incompatibleValue = List.of("not a number");
 
             // When/Then - trying to set a List into an Integer field
             assertThatThrownBy(() ->
-                    ReflectionUtil.setValueDynamicallyThroughSetterName("setAge", obj, List.of("not a number")))
+                    ReflectionUtil.setValueDynamicallyThroughSetterName("setAge", obj, incompatibleValue))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("Incompatible parameter type for setter");
         }
@@ -1523,6 +1522,29 @@ class ReflectionUtilTest {
                     .extracting(Field::getName)
                     .contains("name", "age", "active");
         }
+
+        @Test
+        @DisplayName("Should include own and inherited fields from generic parent class")
+        void shouldIncludeFieldsFromGenericParentClass() {
+            // Given - ConcreteClass extends GenericClass<String, Integer>
+            ConcreteClass obj = new ConcreteClass();
+            obj.setSpecificField("specific");
+            obj.setField1("generic value");
+            obj.setField2(List.of(1, 2, 3));
+
+            // When
+            var fields = ReflectionUtil.getFieldsAsCollection(obj, true);
+
+            // Then - should contain ConcreteClass's specificField and GenericClass's field1, field2, field3
+            assertThat(fields)
+                    .extracting(Field::getName)
+                    .contains("specificField", "field1", "field2", "field3");
+
+            // Verify values were set correctly through accessors
+            assertThat(obj.getSpecificField()).isEqualTo("specific");
+            assertThat(obj.getField1()).isEqualTo("generic value");
+            assertThat(obj.getField2()).containsExactly(1, 2, 3);
+        }
     }
 
     // ==================== Additional Coverage: compareMethodValues with missing method ====================
@@ -1632,8 +1654,9 @@ class ReflectionUtilTest {
         @Test
         @DisplayName("Should throw when setter name is blank")
         void shouldThrowWhenSetterNameIsBlank() {
+            SimpleObject obj = new SimpleObject();
             assertThatThrownBy(() ->
-                    ReflectionUtil.setValueDynamicallyThroughSetterName("   ", new SimpleObject(), "value"))
+                    ReflectionUtil.setValueDynamicallyThroughSetterName("   ", obj, "value"))
                     .isInstanceOf(ApiException.class)
                     .hasMessageContaining("method name cannot be null or empty");
         }

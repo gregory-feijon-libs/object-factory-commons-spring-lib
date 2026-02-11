@@ -91,6 +91,20 @@ class ReflectionTypeUtilTest {
         }
 
         @Test
+        @DisplayName("Should resolve unbound TypeVariable to Object")
+        void shouldResolveUnboundTypeVariableToObject() throws Exception {
+            // Given
+            Field field = GenericClass.class.getDeclaredField("field1");
+            Type genericType = field.getGenericType();
+
+            // When
+            Class<?> result = ReflectionTypeUtil.getRawType(genericType);
+
+            // Then
+            assertThat(result).isEqualTo(Object.class);
+        }
+
+        @Test
         @DisplayName("Should resolve GenericArrayType")
         void shouldResolveGenericArrayType() throws Exception {
             // Given
@@ -142,7 +156,6 @@ class ReflectionTypeUtilTest {
             // Given
             Field field = UpperBoundTestClass.class.getDeclaredField("value");
             Type genericType = field.getGenericType();
-            TypeVariable<?> typeVar = (TypeVariable<?>) genericType;
 
             // Clear bounds artificially for test (using reflection)
             // In practice, TypeVariable always has Object as default bound
@@ -490,9 +503,7 @@ class ReflectionTypeUtilTest {
             ReflectionTypeUtil.isSimpleType(testClass);
 
             // First call (may hit cache from warmup)
-            long start1 = System.nanoTime();
             ReflectionTypeUtil.isSimpleType(testClass);
-            long time1 = System.nanoTime() - start1;
 
             // Subsequent calls (definitely from cache)
             long start2 = System.nanoTime();

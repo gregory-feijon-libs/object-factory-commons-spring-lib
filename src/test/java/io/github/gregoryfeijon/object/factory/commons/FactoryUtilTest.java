@@ -11,6 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
@@ -183,8 +186,9 @@ class FactoryUtilTest {
         void shouldRetrieveAllBeansOfType() {
             Map<String, TestServiceInterface> beans = FactoryUtil.getBeansOfType(TestServiceInterface.class);
 
-            assertThat(beans).isNotEmpty();
-            assertThat(beans).containsKey("testService");
+            assertThat(beans)
+                    .isNotEmpty()
+                    .containsKey("testService");
         }
 
         @Test
@@ -271,26 +275,12 @@ class FactoryUtilTest {
             assertThat(result.get().execute()).isEqualTo("Executed: test");
         }
 
-        @Test
-        @DisplayName("Should return empty Optional when bean name is null")
-        void shouldReturnEmptyWhenBeanNameIsNull() {
-            Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional(null, TestServiceInterface.class);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Should return empty Optional when bean name is empty")
-        void shouldReturnEmptyWhenBeanNameIsEmpty() {
-            Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional("", TestServiceInterface.class);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Should return empty Optional when bean name is blank")
-        void shouldReturnEmptyWhenBeanNameIsBlank() {
-            Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional("   ", TestServiceInterface.class);
+        @ParameterizedTest(name = "Should return empty Optional for bean name=''{0}''")
+        @NullSource
+        @ValueSource(strings = {"", "   ", "nonExistent"})
+        @DisplayName("Should return empty Optional when bean name is null, blank or not found")
+        void shouldReturnEmptyForInvalidOrNotFoundBeanName(String beanName) {
+            Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional(beanName, TestServiceInterface.class);
 
             assertThat(result).isEmpty();
         }
@@ -309,14 +299,6 @@ class FactoryUtilTest {
             setContextRef(null);
 
             Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional("testService", TestServiceInterface.class);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Should return empty Optional when named bean is not found")
-        void shouldReturnEmptyWhenNamedBeanNotFound() {
-            Optional<TestServiceInterface> result = FactoryUtil.getBeanOptional("nonExistent", TestServiceInterface.class);
 
             assertThat(result).isEmpty();
         }

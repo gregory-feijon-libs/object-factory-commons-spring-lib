@@ -55,9 +55,11 @@ jobs:
       - name: Run OWASP Dependency-Check
         run: >-
           mvn -B org.owasp:dependency-check-maven:check
-          -DnvdApiKey=${{ secrets.NVD_API_KEY }}
+          -DnvdApiKey=$NVD_API_KEY
           -DfailBuildOnCVSS=7
           -Dformats=HTML
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
       - name: Upload OWASP Report
         if: always()

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -251,7 +253,7 @@ class EnumUtilTest {
             // When
             EmptyEnum result = EnumUtil.getEnumOrNull(
                     EmptyEnum.class,
-                    e -> e.name(),
+                    Enum::name,
                     "ANY"
             );
 
@@ -363,11 +365,13 @@ class EnumUtilTest {
             assertThat(result).isEqualTo(StatusEnum.PENDING);
         }
 
-        @Test
-        @DisplayName("Should return null when name not found")
-        void shouldReturnNullWhenNameNotFound() {
+        @ParameterizedTest(name = "Should return null for name=''{0}''")
+        @NullSource
+        @ValueSource(strings = {"NONEXISTENT", "pending"})
+        @DisplayName("Should return null when name is null, not found or case-sensitive mismatch")
+        void shouldReturnNullForInvalidOrUnmatchedName(String name) {
             // When
-            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, "NONEXISTENT");
+            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, name);
 
             // Then
             assertThat(result).isNull();
@@ -384,16 +388,6 @@ class EnumUtilTest {
         }
 
         @Test
-        @DisplayName("Should return null when name is null")
-        void shouldReturnNullWhenNameIsNull() {
-            // When
-            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, null);
-
-            // Then
-            assertThat(result).isNull();
-        }
-
-        @Test
         @DisplayName("Should find enum with case-insensitive search")
         void shouldFindEnumWithCaseInsensitiveSearch() {
             // When
@@ -401,16 +395,6 @@ class EnumUtilTest {
 
             // Then
             assertThat(result).isEqualTo(StatusEnum.INACTIVE);
-        }
-
-        @Test
-        @DisplayName("Should be case-sensitive by default")
-        void shouldBeCaseSensitiveByDefault() {
-            // When
-            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, "pending");
-
-            // Then
-            assertThat(result).isNull();
         }
     }
 
