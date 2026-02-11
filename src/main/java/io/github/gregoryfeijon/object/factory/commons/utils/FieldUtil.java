@@ -2,12 +2,13 @@ package io.github.gregoryfeijon.object.factory.commons.utils;
 
 import io.github.gregoryfeijon.object.factory.commons.exception.ApiException;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -26,8 +27,42 @@ import java.util.function.Supplier;
  * @author gregory.feijon
  * @since 1.0
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FieldUtil {
+
+    /**
+     * Functional interface for field setter strategies.
+     */
+    @FunctionalInterface
+    private interface FieldSetterStrategy {
+        void setValue(Field field, Object target, Object value) throws ReflectiveOperationException;
+    }
+
+    /**
+     * Functional interface for field getter strategies.
+     */
+    @FunctionalInterface
+    private interface FieldGetterStrategy {
+        Object getValue(Field field, Object target) throws ReflectiveOperationException;
+    }
+
+    /**
+     * Ordered list of setter strategies to try.
+     */
+    private static final List<FieldSetterStrategy> SETTER_STRATEGIES = List.of(
+            FieldUtil::setValueUsingSetter,
+            FieldUtil::setFieldValueWithHandles,
+            FieldUtil::setValueUsingFieldUtils
+    );
+
+    /**
+     * Ordered list of getter strategies to try.
+     */
+    private static final List<FieldGetterStrategy> GETTER_STRATEGIES = List.of(
+            FieldUtil::getValueUsingGetter,
+            FieldUtil::getFieldValueWithHandles,
+            FieldUtil::getValueUsingFieldUtils
+    );
 
     /**
      * Sets the value of a field, even if it is protected or private.
@@ -46,23 +81,22 @@ public final class FieldUtil {
      * @throws ApiException If the field value cannot be set by any method
      */
     public static <T> void setProtectedFieldValue(Field destField, T dest, Object sourceValue) {
-        validateSetterParameters(destField, dest);
-        try {
-            setValueUsingSetter(destField, dest, sourceValue);
-        } catch (Exception e) {
+        validateFieldParameters(destField, dest, "Destination object");
+
+        Exception lastException = null;
+        for (FieldSetterStrategy strategy : SETTER_STRATEGIES) {
             try {
-                setFieldValueWithHandles(destField, dest, sourceValue);
-            } catch (Exception ex) {
-                try {
-                    setValueUsingFieldUtils(destField, dest, sourceValue);
-                } catch (IllegalAccessException exc) {
-                    throw new ApiException(
-                            String.format("Failed to set value for field '%s' after trying all strategies",
-                                    destField.getName()),
-                            exc);
-                }
+                strategy.setValue(destField, dest, sourceValue);
+                return;
+            } catch (Exception e) {
+                lastException = e;
             }
         }
+
+        throw new ApiException(
+                String.format("Failed to set value for field '%s' after trying all strategies",
+                        destField.getName()),
+                lastException);
     }
 
     /**
@@ -81,23 +115,21 @@ public final class FieldUtil {
      * @throws ApiException If the field value cannot be retrieved by any method
      */
     public static Object getProtectedFieldValue(Field field, Object target) {
-        validateGetterParameters(field, target);
-        try {
-            return getValueUsingGetter(field, target);
-        } catch (Exception e) {
+        validateFieldParameters(field, target, "Target object");
+
+        Exception lastException = null;
+        for (FieldGetterStrategy strategy : GETTER_STRATEGIES) {
             try {
-                return getFieldValueWithHandles(field, target);
-            } catch (Exception ex) {
-                try {
-                    return getValueUsingFieldUtils(field, target);
-                } catch (IllegalAccessException exc) {
-                    throw new ApiException(
-                            String.format("Failed to get value from field '%s' after trying all strategies",
-                                    field.getName()),
-                            exc);
-                }
+                return strategy.getValue(field, target);
+            } catch (Exception e) {
+                lastException = e;
             }
         }
+
+        throw new ApiException(
+                String.format("Failed to get value from field '%s' after trying all strategies",
+                        field.getName()),
+                lastException);
     }
 
     /**
@@ -119,6 +151,23 @@ public final class FieldUtil {
         return value == null;
     }
 
+    // ==================== Setter Strategies ====================
+
+    /**
+     * Sets a field value using its setter method.
+     * <p>
+     * This is the preferred strategy as it respects the class's encapsulation
+     * and any business logic in the setter.
+     *
+     * @param field  The field to set
+     * @param target The object containing the field
+     * @param value  The value to set
+     * @throws ApiException If no setter is found or setter invocation fails
+     */
+    private static void setValueUsingSetter(Field field, Object target, Object value) {
+        ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(field, target, value);
+    }
+
     /**
      * Sets a field value using the VarHandle API.
      * <p>
@@ -133,24 +182,49 @@ public final class FieldUtil {
      *   <li>Type-safe operations</li>
      * </ul>
      *
-     * @param <T>    The type of the object containing the field
      * @param field  The field to set
      * @param target The object containing the field
      * @param value  The value to set
-     * @throws ApiException If the field value cannot be set using VarHandle
+     * @throws ReflectiveOperationException If the field value cannot be set using VarHandle
      */
-    private static <T> void setFieldValueWithHandles(Field field, T target, Object value) {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
-                    target.getClass(),
-                    MethodHandles.lookup());
-            VarHandle varHandle = lookup.unreflectVarHandle(field);
-            varHandle.set(target, value);
-        } catch (Exception ex) {
-            throw new ApiException(
-                    String.format("VarHandle strategy failed for field '%s'", field.getName()),
-                    ex);
-        }
+    private static void setFieldValueWithHandles(Field field, Object target, Object value) throws ReflectiveOperationException {
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
+                target.getClass(),
+                MethodHandles.lookup());
+        VarHandle varHandle = lookup.unreflectVarHandle(field);
+        varHandle.set(target, value);
+    }
+
+    /**
+     * Sets a field value using Apache Commons FieldUtils.
+     * <p>
+     * This is the fallback strategy that uses Apache Commons Lang reflection utilities.
+     * It's the most compatible but also the slowest approach.
+     *
+     * @param field  The field to set
+     * @param target The object containing the field
+     * @param value  The value to set
+     * @throws ReflectiveOperationException If field access fails
+     */
+    private static void setValueUsingFieldUtils(Field field, Object target, Object value) throws ReflectiveOperationException {
+        FieldUtils.writeField(target, field.getName(), value, true);
+    }
+
+    // ==================== Getter Strategies ====================
+
+    /**
+     * Gets a field value using its getter method.
+     * <p>
+     * This is the preferred strategy as it respects the class's encapsulation
+     * and any business logic in the getter.
+     *
+     * @param field  The field to get
+     * @param target The object containing the field
+     * @return The value from the getter
+     * @throws ApiException If no getter is found or getter invocation fails
+     */
+    private static Object getValueUsingGetter(Field field, Object target) {
+        return ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(field, target);
     }
 
     /**
@@ -162,68 +236,14 @@ public final class FieldUtil {
      * @param field  The field to get
      * @param target The object containing the field
      * @return The value of the field
-     * @throws ApiException If the field value cannot be retrieved using VarHandle
+     * @throws ReflectiveOperationException If the field value cannot be retrieved using VarHandle
      */
-    private static Object getFieldValueWithHandles(Field field, Object target) {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
-                    target.getClass(),
-                    MethodHandles.lookup());
-            VarHandle varHandle = lookup.unreflectVarHandle(field);
-            return varHandle.get(target);
-        } catch (Exception ex) {
-            throw new ApiException(
-                    String.format("VarHandle strategy failed for field '%s'", field.getName()),
-                    ex);
-        }
-    }
-
-    /**
-     * Sets a field value using its setter method.
-     * <p>
-     * This is the preferred strategy as it respects the class's encapsulation
-     * and any business logic in the setter.
-     *
-     * @param <T>   The type of the object containing the field
-     * @param field The field to set
-     * @param dest  The object containing the field
-     * @param value The value to set
-     * @throws Exception If no setter is found or setter invocation fails
-     */
-    private static <T> void setValueUsingSetter(Field field, T dest, Object value) throws Exception {
-        ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(field, dest, value);
-    }
-
-    /**
-     * Gets a field value using its getter method.
-     * <p>
-     * This is the preferred strategy as it respects the class's encapsulation
-     * and any business logic in the getter.
-     *
-     * @param field  The field to get
-     * @param target The object containing the field
-     * @return The value from the getter
-     * @throws Exception If no getter is found or getter invocation fails
-     */
-    private static Object getValueUsingGetter(Field field, Object target) throws Exception {
-        return ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(field, target);
-    }
-
-    /**
-     * Sets a field value using Apache Commons FieldUtils.
-     * <p>
-     * This is the fallback strategy that uses Apache Commons Lang reflection utilities.
-     * It's the most compatible but also the slowest approach.
-     *
-     * @param <T>   The type of the object containing the field
-     * @param field The field to set
-     * @param dest  The object containing the field
-     * @param value The value to set
-     * @throws IllegalAccessException If field access fails
-     */
-    private static <T> void setValueUsingFieldUtils(Field field, T dest, Object value)
-            throws IllegalAccessException {
-        FieldUtils.writeField(dest, field.getName(), value, true);
+    private static Object getFieldValueWithHandles(Field field, Object target) throws ReflectiveOperationException {
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
+                target.getClass(),
+                MethodHandles.lookup());
+        VarHandle varHandle = lookup.unreflectVarHandle(field);
+        return varHandle.get(target);
     }
 
     /**
@@ -234,43 +254,28 @@ public final class FieldUtil {
      * @param field  The field to get
      * @param target The object containing the field
      * @return The value of the field
-     * @throws IllegalAccessException If field access fails
+     * @throws ReflectiveOperationException If field access fails
      */
-    private static Object getValueUsingFieldUtils(Field field, Object target)
-            throws IllegalAccessException {
+    private static Object getValueUsingFieldUtils(Field field, Object target) throws ReflectiveOperationException {
         return FieldUtils.readField(field, target, true);
     }
 
-    /**
-     * Validates parameters for setter operations.
-     *
-     * @param field The field to validate
-     * @param dest  The destination object to validate
-     * @param <T>   The type of the destination object
-     * @throws ApiException if any parameter is null
-     */
-    private static <T> void validateSetterParameters(Field field, T dest) {
-        if (field == null) {
-            throw new ApiException("Field cannot be null");
-        }
-        if (dest == null) {
-            throw new ApiException("Destination object cannot be null");
-        }
-    }
+    // ==================== Validation ====================
 
     /**
-     * Validates parameters for getter operations.
+     * Validates parameters for field operations.
      *
-     * @param field  The field to validate
-     * @param target The target object to validate
+     * @param field       The field to validate
+     * @param target      The target object to validate
+     * @param targetLabel Label for the target in error messages (e.g., "Destination object", "Target object")
      * @throws ApiException if any parameter is null
      */
-    private static void validateGetterParameters(Field field, Object target) {
+    private static void validateFieldParameters(Field field, Object target, String targetLabel) {
         if (field == null) {
             throw new ApiException("Field cannot be null");
         }
         if (target == null) {
-            throw new ApiException("Target object cannot be null");
+            throw new ApiException(targetLabel + " cannot be null");
         }
     }
 }

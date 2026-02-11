@@ -9,6 +9,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -118,6 +119,85 @@ public class FactoryUtil implements ApplicationContextAware {
             throw new ApiException(
                     String.format("Failed to retrieve beans with type: %s", beanClass.getName()), e);
         }
+    }
+
+    // ==================== Optional Bean Retrieval ====================
+
+    /**
+     * Gets a bean by its type, returning an Optional instead of throwing an exception.
+     * <p>
+     * This method provides a safer way to retrieve beans when the bean might not exist.
+     * Instead of throwing an exception, it returns an empty Optional.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>
+     * Optional&lt;MyService&gt; service = FactoryUtil.getBeanOptional(MyService.class);
+     * service.ifPresent(s -&gt; s.doSomething());
+     * </pre>
+     *
+     * @param <T>       The bean type
+     * @param beanClass The class of the bean to retrieve (must not be null)
+     * @return An Optional containing the bean, or empty if not found or context not initialized
+     */
+    public static <T> Optional<T> getBeanOptional(Class<T> beanClass) {
+        if (beanClass == null) {
+            return Optional.empty();
+        }
+
+        ApplicationContext context = contextRef.get();
+        if (context == null) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(context.getBean(beanClass));
+        } catch (BeansException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Gets a bean by its name and type, returning an Optional instead of throwing an exception.
+     * <p>
+     * This method provides a safer way to retrieve beans when the bean might not exist.
+     * <p>
+     * <strong>Example:</strong>
+     * <pre>
+     * Optional&lt;MyService&gt; service = FactoryUtil.getBeanOptional("myService", MyService.class);
+     * MyService s = service.orElseGet(DefaultService::new);
+     * </pre>
+     *
+     * @param <T>       The bean type
+     * @param beanName  The name of the bean to retrieve
+     * @param beanClass The class of the bean to retrieve
+     * @return An Optional containing the bean, or empty if not found or context not initialized
+     */
+    public static <T> Optional<T> getBeanOptional(String beanName, Class<T> beanClass) {
+        if (beanName == null || beanName.trim().isEmpty() || beanClass == null) {
+            return Optional.empty();
+        }
+
+        ApplicationContext context = contextRef.get();
+        if (context == null) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(context.getBean(beanName, beanClass));
+        } catch (BeansException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Checks if the ApplicationContext has been initialized.
+     * <p>
+     * Useful for conditional logic that depends on Spring context availability.
+     *
+     * @return true if the context is initialized, false otherwise
+     */
+    public static boolean isContextInitialized() {
+        return contextRef.get() != null;
     }
 
     /**

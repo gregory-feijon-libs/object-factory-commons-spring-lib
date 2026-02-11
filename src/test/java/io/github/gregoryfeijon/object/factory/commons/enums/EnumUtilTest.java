@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -251,12 +253,148 @@ class EnumUtilTest {
             // When
             EmptyEnum result = EnumUtil.getEnumOrNull(
                     EmptyEnum.class,
-                    e -> e.name(),
+                    Enum::name,
                     "ANY"
             );
 
             // Then
             assertThat(result).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("getEnumByName() method tests")
+    class GetEnumByNameTests {
+
+        @Test
+        @DisplayName("Should find enum by exact name")
+        void shouldFindEnumByExactName() {
+            // When
+            Optional<StatusEnum> result = EnumUtil.getEnumByName(StatusEnum.class, "ACTIVE");
+
+            // Then
+            assertThat(result)
+                    .isPresent()
+                    .contains(StatusEnum.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("Should return empty when name not found")
+        void shouldReturnEmptyWhenNameNotFound() {
+            // When
+            Optional<StatusEnum> result = EnumUtil.getEnumByName(StatusEnum.class, "NONEXISTENT");
+
+            // Then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should be case-sensitive by default")
+        void shouldBeCaseSensitiveByDefault() {
+            // When
+            Optional<StatusEnum> result = EnumUtil.getEnumByName(StatusEnum.class, "active");
+
+            // Then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should find enum with case-insensitive search")
+        void shouldFindEnumWithCaseInsensitiveSearch() {
+            // When
+            Optional<StatusEnum> result = EnumUtil.getEnumByName(StatusEnum.class, "active", true);
+
+            // Then
+            assertThat(result)
+                    .isPresent()
+                    .contains(StatusEnum.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("Should find enum with mixed case when ignoring case")
+        void shouldFindEnumWithMixedCaseWhenIgnoringCase() {
+            // When
+            Optional<StatusEnum> result = EnumUtil.getEnumByName(StatusEnum.class, "AcTiVe", true);
+
+            // Then
+            assertThat(result)
+                    .isPresent()
+                    .contains(StatusEnum.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when enumType is null")
+        void shouldThrowExceptionWhenEnumTypeIsNull() {
+            // When/Then
+            assertThatThrownBy(() -> EnumUtil.getEnumByName(null, "ACTIVE"))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Arguments cannot be null");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when name is null")
+        void shouldThrowExceptionWhenNameIsNull() {
+            // When/Then
+            assertThatThrownBy(() -> EnumUtil.getEnumByName(StatusEnum.class, null))
+                    .isInstanceOf(ApiException.class)
+                    .hasMessageContaining("Arguments cannot be null");
+        }
+
+        @Test
+        @DisplayName("Should return empty for empty enum")
+        void shouldReturnEmptyForEmptyEnum() {
+            // When
+            Optional<EmptyEnum> result = EnumUtil.getEnumByName(EmptyEnum.class, "ANY");
+
+            // Then
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getEnumByNameOrNull() method tests")
+    class GetEnumByNameOrNullTests {
+
+        @Test
+        @DisplayName("Should find enum by exact name")
+        void shouldFindEnumByExactName() {
+            // When
+            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, "PENDING");
+
+            // Then
+            assertThat(result).isEqualTo(StatusEnum.PENDING);
+        }
+
+        @ParameterizedTest(name = "Should return null for name=''{0}''")
+        @NullSource
+        @ValueSource(strings = {"NONEXISTENT", "pending"})
+        @DisplayName("Should return null when name is null, not found or case-sensitive mismatch")
+        void shouldReturnNullForInvalidOrUnmatchedName(String name) {
+            // When
+            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, name);
+
+            // Then
+            assertThat(result).isNull();
+        }
+
+        @Test
+        @DisplayName("Should return null when enumType is null")
+        void shouldReturnNullWhenEnumTypeIsNull() {
+            // When
+            StatusEnum result = EnumUtil.getEnumByNameOrNull(null, "ACTIVE");
+
+            // Then
+            assertThat(result).isNull();
+        }
+
+        @Test
+        @DisplayName("Should find enum with case-insensitive search")
+        void shouldFindEnumWithCaseInsensitiveSearch() {
+            // When
+            StatusEnum result = EnumUtil.getEnumByNameOrNull(StatusEnum.class, "inactive", true);
+
+            // Then
+            assertThat(result).isEqualTo(StatusEnum.INACTIVE);
         }
     }
 

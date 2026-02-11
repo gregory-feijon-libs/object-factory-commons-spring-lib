@@ -3,6 +3,8 @@ package io.github.gregoryfeijon.object.factory.commons;
 import io.github.gregoryfeijon.object.factory.commons.domain.ArrayTestClass;
 import io.github.gregoryfeijon.object.factory.commons.domain.CustomNumber;
 import io.github.gregoryfeijon.object.factory.commons.domain.GenericClass;
+import io.github.gregoryfeijon.object.factory.commons.domain.NestedRecord;
+import io.github.gregoryfeijon.object.factory.commons.domain.TestRecord;
 import io.github.gregoryfeijon.object.factory.commons.domain.UpperBoundNumberTestClass;
 import io.github.gregoryfeijon.object.factory.commons.domain.UpperBoundTestClass;
 import io.github.gregoryfeijon.object.factory.commons.domain.WildcardTestClass;
@@ -14,10 +16,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.mockito.Mockito;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -85,6 +91,20 @@ class ReflectionTypeUtilTest {
         }
 
         @Test
+        @DisplayName("Should resolve unbound TypeVariable to Object")
+        void shouldResolveUnboundTypeVariableToObject() throws Exception {
+            // Given
+            Field field = GenericClass.class.getDeclaredField("field1");
+            Type genericType = field.getGenericType();
+
+            // When
+            Class<?> result = ReflectionTypeUtil.getRawType(genericType);
+
+            // Then
+            assertThat(result).isEqualTo(Object.class);
+        }
+
+        @Test
         @DisplayName("Should resolve GenericArrayType")
         void shouldResolveGenericArrayType() throws Exception {
             // Given
@@ -136,7 +156,6 @@ class ReflectionTypeUtilTest {
             // Given
             Field field = UpperBoundTestClass.class.getDeclaredField("value");
             Type genericType = field.getGenericType();
-            TypeVariable<?> typeVar = (TypeVariable<?>) genericType;
 
             // Clear bounds artificially for test (using reflection)
             // In practice, TypeVariable always has Object as default bound
@@ -484,9 +503,7 @@ class ReflectionTypeUtilTest {
             ReflectionTypeUtil.isSimpleType(testClass);
 
             // First call (may hit cache from warmup)
-            long start1 = System.nanoTime();
             ReflectionTypeUtil.isSimpleType(testClass);
-            long time1 = System.nanoTime() - start1;
 
             // Subsequent calls (definitely from cache)
             long start2 = System.nanoTime();
@@ -580,6 +597,253 @@ class ReflectionTypeUtilTest {
 
             // Then - Should be true because it extends Number
             assertThat(result).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Records Support Tests (Java 16+)")
+    class RecordsSupportTests {
+
+        @Nested
+        @DisplayName("isRecord() tests")
+        class IsRecordTests {
+
+            @Test
+            @DisplayName("Should return true for record classes")
+            void shouldReturnTrueForRecordClasses() {
+                // When
+                boolean result = ReflectionTypeUtil.isRecord(TestRecord.class);
+
+                // Then
+                assertThat(result).isTrue();
+            }
+
+            @Test
+            @DisplayName("Should return true for nested record")
+            void shouldReturnTrueForNestedRecord() {
+                // When
+                boolean result = ReflectionTypeUtil.isRecord(NestedRecord.class);
+
+                // Then
+                assertThat(result).isTrue();
+            }
+
+            @Test
+            @DisplayName("Should return false for regular classes")
+            void shouldReturnFalseForRegularClasses() {
+                // When
+                boolean result = ReflectionTypeUtil.isRecord(String.class);
+
+                // Then
+                assertThat(result).isFalse();
+            }
+
+            @Test
+            @DisplayName("Should return false for null")
+            void shouldReturnFalseForNull() {
+                // When
+                boolean result = ReflectionTypeUtil.isRecord(null);
+
+                // Then
+                assertThat(result).isFalse();
+            }
+
+            @Test
+            @DisplayName("Should return false for enum classes")
+            void shouldReturnFalseForEnumClasses() {
+                // Given
+                enum TestEnum { VALUE }
+
+                // When
+                boolean result = ReflectionTypeUtil.isRecord(TestEnum.class);
+
+                // Then
+                assertThat(result).isFalse();
+            }
+        }
+
+        @Nested
+        @DisplayName("getRecordComponents() tests")
+        class GetRecordComponentsTests {
+
+            @Test
+            @DisplayName("Should return all record components")
+            void shouldReturnAllRecordComponents() {
+                // When
+                List<RecordComponent> components = ReflectionTypeUtil.getRecordComponents(TestRecord.class);
+
+                // Then
+                assertThat(components)
+                        .hasSize(3)
+                        .extracting(RecordComponent::getName)
+                        .containsExactly("name", "age", "active");
+            }
+
+            @Test
+            @DisplayName("Should return correct types for components")
+            void shouldReturnCorrectTypesForComponents() {
+                // When
+                List<RecordComponent> components = ReflectionTypeUtil.getRecordComponents(TestRecord.class);
+
+                // Then
+                assertThat(components)
+                        .extracting(RecordComponent::getType)
+                        .containsExactly(String.class, int.class, boolean.class);
+            }
+
+            @Test
+            @DisplayName("Should return empty list for null")
+            void shouldReturnEmptyListForNull() {
+                // When
+                List<RecordComponent> components = ReflectionTypeUtil.getRecordComponents(null);
+
+                // Then
+                assertThat(components).isEmpty();
+            }
+
+            @Test
+            @DisplayName("Should return empty list for non-record class")
+            void shouldReturnEmptyListForNonRecordClass() {
+                // When
+                List<RecordComponent> components = ReflectionTypeUtil.getRecordComponents(String.class);
+
+                // Then
+                assertThat(components).isEmpty();
+            }
+
+            @Test
+            @DisplayName("Should handle record with complex types")
+            void shouldHandleRecordWithComplexTypes() {
+                // When
+                List<RecordComponent> components = ReflectionTypeUtil.getRecordComponents(NestedRecord.class);
+
+                // Then
+                assertThat(components)
+                        .hasSize(3)
+                        .extracting(RecordComponent::getName)
+                        .containsExactly("id", "tags", "innerRecord");
+            }
+        }
+
+        @Nested
+        @DisplayName("getRecordComponentNames() tests")
+        class GetRecordComponentNamesTests {
+
+            @Test
+            @DisplayName("Should return all component names")
+            void shouldReturnAllComponentNames() {
+                // When
+                List<String> names = ReflectionTypeUtil.getRecordComponentNames(TestRecord.class);
+
+                // Then
+                assertThat(names)
+                        .hasSize(3)
+                        .containsExactly("name", "age", "active");
+            }
+
+            @Test
+            @DisplayName("Should return empty list for null")
+            void shouldReturnEmptyListForNull() {
+                // When
+                List<String> names = ReflectionTypeUtil.getRecordComponentNames(null);
+
+                // Then
+                assertThat(names).isEmpty();
+            }
+
+            @Test
+            @DisplayName("Should return empty list for non-record class")
+            void shouldReturnEmptyListForNonRecordClass() {
+                // When
+                List<String> names = ReflectionTypeUtil.getRecordComponentNames(Integer.class);
+
+                // Then
+                assertThat(names).isEmpty();
+            }
+        }
+
+        @Nested
+        @DisplayName("getRecordComponentTypes() tests")
+        class GetRecordComponentTypesTests {
+
+            @Test
+            @DisplayName("Should return all component types")
+            void shouldReturnAllComponentTypes() {
+                // When
+                List<Class<?>> types = ReflectionTypeUtil.getRecordComponentTypes(TestRecord.class);
+
+                // Then
+                assertThat(types)
+                        .hasSize(3)
+                        .containsExactly(String.class, int.class, boolean.class);
+            }
+
+            @Test
+            @DisplayName("Should return empty list for null")
+            void shouldReturnEmptyListForNull() {
+                // When
+                List<Class<?>> types = ReflectionTypeUtil.getRecordComponentTypes(null);
+
+                // Then
+                assertThat(types).isEmpty();
+            }
+
+            @Test
+            @DisplayName("Should return empty list for non-record class")
+            void shouldReturnEmptyListForNonRecordClass() {
+                // When
+                List<Class<?>> types = ReflectionTypeUtil.getRecordComponentTypes(List.class);
+
+                // Then
+                assertThat(types).isEmpty();
+            }
+
+            @Test
+            @DisplayName("Should handle complex component types")
+            void shouldHandleComplexComponentTypes() {
+                // When
+                List<Class<?>> types = ReflectionTypeUtil.getRecordComponentTypes(NestedRecord.class);
+
+                // Then
+                assertThat(types)
+                        .hasSize(3)
+                        .containsExactly(String.class, List.class, TestRecord.class);
+            }
+        }
+    }
+
+    // ==================== Additional Coverage: TypeVariable/WildcardType without bounds ====================
+
+    @Nested
+    @DisplayName("getRawType() edge cases with mocked types")
+    class GetRawTypeMockedTests {
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("Should throw for TypeVariable without bounds")
+        void shouldThrowForTypeVariableWithoutBounds() {
+            // Given - mock a TypeVariable with empty bounds
+            TypeVariable<?> mockTypeVar = Mockito.mock(TypeVariable.class);
+            Mockito.when(mockTypeVar.getBounds()).thenReturn(new Type[0]);
+            Mockito.when(mockTypeVar.getName()).thenReturn("T");
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionTypeUtil.getRawType(mockTypeVar))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("TypeVariable without bounds: T");
+        }
+
+        @Test
+        @DisplayName("Should throw for WildcardType without upper bounds")
+        void shouldThrowForWildcardTypeWithoutUpperBounds() {
+            // Given - mock a WildcardType with empty upper bounds
+            WildcardType mockWildcard = Mockito.mock(WildcardType.class);
+            Mockito.when(mockWildcard.getUpperBounds()).thenReturn(new Type[0]);
+
+            // When/Then
+            assertThatThrownBy(() -> ReflectionTypeUtil.getRawType(mockWildcard))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("WildcardType without upper bounds");
         }
     }
 }

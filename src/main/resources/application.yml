@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: object-factory-commons-spring-lib
-  main:
-    allow-bean-definition-overriding: true

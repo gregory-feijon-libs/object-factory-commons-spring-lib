@@ -35,7 +35,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set private field via setter method")
-        void shouldSetPrivateFieldViaSetter() throws Exception {
+        void shouldSetPrivateFieldViaSetter() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "privateField");
@@ -50,7 +50,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set protected field via setter method")
-        void shouldSetProtectedFieldViaSetter() throws Exception {
+        void shouldSetProtectedFieldViaSetter() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "protectedField");
@@ -65,7 +65,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set public field directly")
-        void shouldSetPublicFieldDirectly() throws Exception {
+        void shouldSetPublicFieldDirectly() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "publicField");
@@ -80,7 +80,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set field without setter using VarHandle fallback")
-        void shouldSetFieldWithoutSetterUsingVarHandle() throws Exception {
+        void shouldSetFieldWithoutSetterUsingVarHandle() {
             // Given
             NoGetterSetterObject obj = new NoGetterSetterObject();
             Field field = getField(NoGetterSetterObject.class, "fieldWithoutAccessors");
@@ -96,7 +96,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set null value")
-        void shouldSetNullValue() throws Exception {
+        void shouldSetNullValue() {
             // Given
             ComplexObject obj = new ComplexObject();
             obj.setStringValue("initial");
@@ -112,7 +112,7 @@ class FieldUtilTest {
         @ParameterizedTest(name = "Should set {0} type field")
         @MethodSource("provideDifferentTypes")
         @DisplayName("Should handle different field types")
-        void shouldHandleDifferentTypes(String fieldName, Object value) throws Exception {
+        void shouldHandleDifferentTypes(String fieldName, Object value) {
             // Given
             ComplexObject obj = new ComplexObject();
             Field field = getField(ComplexObject.class, fieldName);
@@ -148,7 +148,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should throw ApiException when destination object is null")
-        void shouldThrowExceptionWhenDestIsNull() throws Exception {
+        void shouldThrowExceptionWhenDestIsNull() {
             // Given
             Field field = getField(TestObject.class, "privateField");
 
@@ -160,7 +160,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should handle final fields gracefully when possible")
-        void shouldHandleFinalFieldsWhenPossible() throws Exception {
+        void shouldHandleFinalFieldsWhenPossible() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "finalField");
@@ -187,7 +187,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should get private field via getter method")
-        void shouldGetPrivateFieldViaGetter() throws Exception {
+        void shouldGetPrivateFieldViaGetter() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "privateField");
@@ -201,7 +201,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should get protected field via getter method")
-        void shouldGetProtectedFieldViaGetter() throws Exception {
+        void shouldGetProtectedFieldViaGetter() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "protectedField");
@@ -215,7 +215,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should get public field directly")
-        void shouldGetPublicFieldDirectly() throws Exception {
+        void shouldGetPublicFieldDirectly() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "publicField");
@@ -229,7 +229,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should get field without getter using VarHandle fallback")
-        void shouldGetFieldWithoutGetterUsingVarHandle() throws Exception {
+        void shouldGetFieldWithoutGetterUsingVarHandle() {
             // Given
             NoGetterSetterObject obj = new NoGetterSetterObject();
             Field field = getField(NoGetterSetterObject.class, "fieldWithoutAccessors");
@@ -243,7 +243,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should return null for null field value")
-        void shouldReturnNullForNullFieldValue() throws Exception {
+        void shouldReturnNullForNullFieldValue() {
             // Given
             ComplexObject obj = new ComplexObject();
             Field field = getField(ComplexObject.class, "stringValue");
@@ -269,7 +269,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should throw ApiException when target object is null")
-        void shouldThrowExceptionWhenTargetIsNull() throws Exception {
+        void shouldThrowExceptionWhenTargetIsNull() {
             // Given
             Field field = getField(TestObject.class, "privateField");
 
@@ -330,7 +330,7 @@ class FieldUtilTest {
             ComplexObject obj = new ComplexObject();
 
             // When
-            boolean result = FieldUtil.verifyNull(() -> obj.getStringValue());
+            boolean result = FieldUtil.verifyNull(obj::getStringValue);
 
             // Then
             assertThat(result).isTrue(); // stringValue is null initially
@@ -352,7 +352,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should set and get value through same field")
-        void shouldSetAndGetValueThroughSameField() throws Exception {
+        void shouldSetAndGetValueThroughSameField() {
             // Given
             TestObject obj = new TestObject();
             Field field = getField(TestObject.class, "privateField");
@@ -368,7 +368,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should handle multiple field operations on same object")
-        void shouldHandleMultipleOperationsOnSameObject() throws Exception {
+        void shouldHandleMultipleOperationsOnSameObject() {
             // Given
             ComplexObject obj = new ComplexObject();
             Field stringField = getField(ComplexObject.class, "stringValue");
@@ -388,7 +388,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should respect setter business logic")
-        void shouldRespectSetterBusinessLogic() throws Exception {
+        void shouldRespectSetterBusinessLogic() {
             // Given
             ObjectWithBusinessLogic obj = new ObjectWithBusinessLogic();
             Field field = getField(ObjectWithBusinessLogic.class, "value");
@@ -425,7 +425,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should use VarHandle when setter is not available")
-        void shouldUseVarHandleWhenSetterNotAvailable() throws Exception {
+        void shouldUseVarHandleWhenSetterNotAvailable() {
             // Given
             NoGetterSetterObject obj = new NoGetterSetterObject();
             Field field = getField(NoGetterSetterObject.class, "fieldWithoutAccessors");
@@ -440,7 +440,7 @@ class FieldUtilTest {
 
         @Test
         @DisplayName("Should fallback through all strategies correctly")
-        void shouldFallbackThroughAllStrategies() throws Exception {
+        void shouldFallbackThroughAllStrategies() {
             // Given
             NoAccessorsObject obj = new NoAccessorsObject();
             Field field = getField(NoAccessorsObject.class, "hiddenField");
