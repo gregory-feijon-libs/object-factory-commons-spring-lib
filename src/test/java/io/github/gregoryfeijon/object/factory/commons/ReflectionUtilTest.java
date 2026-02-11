@@ -77,6 +77,7 @@ class ReflectionUtilTest {
             // Then - May include Object's getters like getClass()
             assertThat(getters)
                     .extracting(Method::getName)
+                    .isNotEmpty()
                     .allMatch(name -> name.toLowerCase().startsWith("get") ||
                             name.toLowerCase().startsWith("is"));
         }
