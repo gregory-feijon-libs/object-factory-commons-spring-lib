@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'release/**'
+      - 'hotfix/**'
 
 concurrency:
   group: release-${{ github.ref }}
@@ -14,9 +15,17 @@ jobs:
   validate:
     name: Validate Release
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
+      - name: Validate branch origin
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [[ ! "$BRANCH" =~ ^(release|hotfix)/ ]]; then
+            echo "::error::Pipeline only accepts release/* or hotfix/* branches. Got: $BRANCH"
+            exit 1
+          fi
+
       - name: Checkout repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -25,7 +34,9 @@ jobs:
       - name: Extract version from branch name
         id: version
         run: |
-          VERSION="${GITHUB_REF_NAME#release/}"
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          VERSION="${BRANCH_NAME#release/}"
+          VERSION="${VERSION#hotfix/}"
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
             echo "::error::Invalid version format: $VERSION"
             exit 1
@@ -52,6 +63,43 @@ jobs:
       - name: Run Tests
         run: mvn -B clean verify
 
+      - name: Cache Sonar packages
+        if: contains(github.ref_name, 'hotfix/')
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build, Test and Analyze (SonarCloud)
+        if: contains(github.ref_name, 'hotfix/')
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify sonar:sonar -Dsonar.token=$SONAR_TOKEN
+
+      - name: Install and Run Semgrep
+        if: contains(github.ref_name, 'hotfix/')
+        run: |
+          pip install semgrep
+          semgrep --config .semgrep.yaml
+
+      - name: Run OWASP Dependency-Check
+        if: contains(github.ref_name, 'hotfix/')
+        run: >-
+          mvn -B org.owasp:dependency-check-maven:check
+          -DnvdApiKey=$NVD_API_KEY
+          -DfailBuildOnCVSS=7
+          -Dformats=HTML
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      - name: Upload OWASP Report
+        if: always() && contains(github.ref_name, 'hotfix/')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.html
+
   deploy:
     name: Deploy to Maven Central
     runs-on: ubuntu-latest
@@ -66,7 +114,11 @@ jobs:
 
       - name: Extract version from branch name
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#release/}" >> $GITHUB_OUTPUT
+        run: |
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          VERSION="${BRANCH_NAME#release/}"
+          VERSION="${VERSION#hotfix/}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
         run: |
@@ -128,24 +180,30 @@ jobs:
         run: |
           git fetch origin main
           git checkout main
-          git merge --no-ff ${{ github.ref_name }} -m "Merge release ${{ github.ref_name }} into main"
+          git merge --no-ff ${{ github.ref_name }} -m "Merge ${{ github.ref_name }} into main"
           git push origin main
 
       - name: Merge to develop
         run: |
           git fetch origin develop
           git checkout develop
-          git merge --no-ff main -m "Merge main back into develop after release ${{ github.ref_name }}"
+          git merge --no-ff main -m "Merge main back into develop after ${{ github.ref_name }}"
           git push origin develop
 
-      - name: Delete previous release branches (keep current)
+      - name: Delete previous release/hotfix branches (keep current)
         run: |
           CURRENT_BRANCH="${{ github.ref_name }}"
-          git fetch origin 'refs/heads/release/*:refs/remotes/origin/release/*'
-          for branch in $(git branch -r --list 'origin/release/*' | sed 's|^ *origin/||'); do
+          # Determine branch type prefix
+          if [[ "$CURRENT_BRANCH" == hotfix/* ]]; then
+            PATTERN="hotfix/*"
+          else
+            PATTERN="release/*"
+          fi
+          git fetch origin "refs/heads/${PATTERN}:refs/remotes/origin/${PATTERN}" || true
+          for branch in $(git branch -r --list "origin/${PATTERN}" | sed 's|^ *origin/||'); do
             if [[ "$branch" != "$CURRENT_BRANCH" ]]; then
-              echo "Deleting old release branch: $branch"
+              echo "Deleting old branch: $branch"
               git push origin --delete "$branch" || true
             fi
           done
-          echo "Kept current release branch: $CURRENT_BRANCH"
+          echo "Kept current branch: $CURRENT_BRANCH"
