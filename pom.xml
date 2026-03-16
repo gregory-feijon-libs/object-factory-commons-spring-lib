@@ -106,7 +106,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>6.2.16</version>
+            <version>6.2.17</version>
         </dependency>
         <!-- Spring Boot Autoconfigure -->
         <dependency>
