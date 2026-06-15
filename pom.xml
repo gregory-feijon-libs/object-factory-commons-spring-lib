@@ -57,7 +57,7 @@
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <jacoco.version>0.8.14</jacoco.version>
         <lombok.version>1.18.46</lombok.version>
-        <spring.starter.version>3.5.14</spring.starter.version>
+        <spring.starter.version>3.5.15</spring.starter.version>
         <sonar.plugin.version>5.6.0.6792</sonar.plugin.version>
         <sonar.coverage.exclusions>
             **/config/**,
