@@ -5,7 +5,7 @@
 
     <groupId>io.github.gregoryfeijon</groupId>
     <artifactId>object-factory-commons-spring-lib</artifactId>
-    <version>1.1.2</version>
+    <version>2.0.0</version>
     <name>object-factory-commons-spring-lib</name>
     <description>Reusable Java utilities designed to support common application tasks.</description>
     <url>https://github.com/gregory-feijon-libs/object-factory-commons-spring-lib.git</url>
@@ -57,7 +57,7 @@
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <jacoco.version>0.8.15</jacoco.version>
         <lombok.version>1.18.46</lombok.version>
-        <spring.starter.version>3.5.14</spring.starter.version>
+        <spring.starter.version>3.5.16</spring.starter.version>
         <sonar.plugin.version>5.7.0.6970</sonar.plugin.version>
         <sonar.coverage.exclusions>
             **/config/**,

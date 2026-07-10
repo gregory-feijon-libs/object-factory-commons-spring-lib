@@ -165,7 +165,7 @@ public final class FieldUtil {
      * @throws ApiException If no setter is found or setter invocation fails
      */
     private static void setValueUsingSetter(Field field, Object target, Object value) {
-        ReflectionUtil.setValueDynamicallyThroughSetterNameFromField(field, target, value);
+        DynamicAccessorUtil.setValueDynamicallyThroughSetterNameFromField(field, target, value);
     }
 
     /**
@@ -224,7 +224,7 @@ public final class FieldUtil {
      * @throws ApiException If no getter is found or getter invocation fails
      */
     private static Object getValueUsingGetter(Field field, Object target) {
-        return ReflectionUtil.getValueDynamicallyThroughGetterNameFromField(field, target);
+        return DynamicAccessorUtil.getValueDynamicallyThroughGetterNameFromField(field, target);
     }
 
     /**

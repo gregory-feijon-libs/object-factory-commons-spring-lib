@@ -7,13 +7,22 @@
  * <strong>Available Utilities:</strong>
  * <ul>
  *   <li>{@link io.github.gregoryfeijon.object.factory.commons.utils.ReflectionUtil ReflectionUtil} -
- *       Comprehensive reflection utilities including:
+ *       Method/field discovery and safe null-handling for property access:
  *       <ul>
- *         <li>Finding and invoking getters/setters dynamically</li>
- *         <li>Comparing objects by their property values</li>
- *         <li>Copying properties between objects</li>
- *         <li>Safe null-handling for property access</li>
+ *         <li>Finding getters/setters/fields on an object's class hierarchy</li>
+ *         <li>Safe getter access with default values ({@code safeGet}, {@code safeGetWithDefaultValue})</li>
  *       </ul>
+ *   </li>
+ *   <li>{@link io.github.gregoryfeijon.object.factory.commons.utils.ReflectionComparator ReflectionComparator} -
+ *       Comparing objects by their getter values, with field filtering and
+ *       null/empty/zero equivalence rules.
+ *   </li>
+ *   <li>{@link io.github.gregoryfeijon.object.factory.commons.utils.DynamicAccessorUtil DynamicAccessorUtil} -
+ *       Invoking getters/setters dynamically by name, with automatic primitive/wrapper
+ *       type conversion.
+ *   </li>
+ *   <li>{@link io.github.gregoryfeijon.object.factory.commons.utils.PropertyCopier PropertyCopier} -
+ *       Copying properties between objects by matching getter/setter names.
  *   </li>
  *   <li>{@link io.github.gregoryfeijon.object.factory.commons.utils.ReflectionTypeUtil ReflectionTypeUtil} -
  *       Type inspection utilities including:
@@ -47,6 +56,9 @@
  * @author Gregory Maximiano Feijon
  * @since 1.0
  * @see io.github.gregoryfeijon.object.factory.commons.utils.ReflectionUtil
+ * @see io.github.gregoryfeijon.object.factory.commons.utils.ReflectionComparator
+ * @see io.github.gregoryfeijon.object.factory.commons.utils.DynamicAccessorUtil
+ * @see io.github.gregoryfeijon.object.factory.commons.utils.PropertyCopier
  * @see io.github.gregoryfeijon.object.factory.commons.utils.ReflectionTypeUtil
  * @see io.github.gregoryfeijon.object.factory.commons.utils.FieldUtil
  */
