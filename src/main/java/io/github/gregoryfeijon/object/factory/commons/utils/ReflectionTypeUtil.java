@@ -75,22 +75,15 @@ public final class ReflectionTypeUtil {
      * @throws IllegalArgumentException if the type is unknown or unsupported
      */
     public static Class<?> getRawType(Type genericType) throws ClassNotFoundException {
-        if (genericType instanceof Class<?> clazz) {
-            return clazz;
-        }
-        if (genericType instanceof ParameterizedType parameterizedType) {
-            return resolveParameterizedType(parameterizedType);
-        }
-        if (genericType instanceof GenericArrayType genericArrayType) {
-            return resolveGenericArrayType(genericArrayType);
-        }
-        if (genericType instanceof TypeVariable<?> typeVariable) {
-            return resolveTypeVariable(typeVariable);
-        }
-        if (genericType instanceof WildcardType wildcardType) {
-            return resolveWildcardType(wildcardType);
-        }
-        throw new IllegalArgumentException("Unsupported Type implementation: " + genericType.getClass().getName());
+        return switch (genericType) {
+            case Class<?> clazz -> clazz;
+            case ParameterizedType parameterizedType -> resolveParameterizedType(parameterizedType);
+            case GenericArrayType genericArrayType -> resolveGenericArrayType(genericArrayType);
+            case TypeVariable<?> typeVariable -> resolveTypeVariable(typeVariable);
+            case WildcardType wildcardType -> resolveWildcardType(wildcardType);
+            default -> throw new IllegalArgumentException(
+                    "Unsupported Type implementation: " + genericType.getClass().getName());
+        };
     }
 
     /**

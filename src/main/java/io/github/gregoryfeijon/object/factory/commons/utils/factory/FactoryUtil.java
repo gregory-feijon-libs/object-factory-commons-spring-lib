@@ -173,7 +173,7 @@ public class FactoryUtil implements ApplicationContextAware {
      * @return An Optional containing the bean, or empty if not found or context not initialized
      */
     public static <T> Optional<T> getBeanOptional(String beanName, Class<T> beanClass) {
-        if (beanName == null || beanName.trim().isEmpty() || beanClass == null) {
+        if (isInvalidBeanNameOrClass(beanName, beanClass)) {
             return Optional.empty();
         }
 
@@ -187,6 +187,17 @@ public class FactoryUtil implements ApplicationContextAware {
         } catch (BeansException e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Checks whether a bean name/class pair is invalid for lookup.
+     *
+     * @param beanName  The bean name to check
+     * @param beanClass The bean class to check
+     * @return true if the bean name is null/blank or the bean class is null
+     */
+    private static <T> boolean isInvalidBeanNameOrClass(String beanName, Class<T> beanClass) {
+        return beanName == null || beanName.trim().isEmpty() || beanClass == null;
     }
 
     /**
