@@ -55,7 +55,7 @@
         <sonar.organization>gregory-feijon-libs</sonar.organization>
         <sonar.projectKey>gregory-feijon-libs_object-factory-commons-spring-lib</sonar.projectKey>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <jacoco.version>0.8.14</jacoco.version>
+        <jacoco.version>0.8.15</jacoco.version>
         <lombok.version>1.18.46</lombok.version>
         <spring.starter.version>3.5.14</spring.starter.version>
         <sonar.plugin.version>5.6.0.6792</sonar.plugin.version>
